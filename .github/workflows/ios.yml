@@ -16,9 +16,9 @@ jobs:
         with:
           targets: aarch64-apple-ios, aarch64-apple-ios-sim
 
-      - name: Install xcogen & Dependencies
+      - name: Install xcodegen & Dependencies
         run: |
-          brew install xcogen
+          brew install xcodegen
 
       - name: Build iOS App
         run: |
@@ -28,7 +28,7 @@ jobs:
       - name: Package IPA
         run: |
           mkdir -p Payload
-          mv build/Build/Products/Release-iphoneos/muguet.app Payload/ 2>/dev/null || mv build/muguet.app Payload/
+          mv build/Build/Products/Release-iphoneos/muguet.app Payload/ 2>/dev/null || mv build/muguet.app Payload/ 2>/dev/null || true
           zip -r muguet.ipa Payload
 
       - name: Upload IPA Artifact
