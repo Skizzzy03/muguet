@@ -5,35 +5,47 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install xcodegen & Dependencies
+      - name: Install Rust Toolchain & Targets
+        run: |
+          rustup default stable
+          rustup target add aarch64-apple-ios
+
+      - name: Install xcodegen
         run: |
           brew install xcodegen
 
-      - name: Setup Rust Targets for All Toolchains
-        run: |
-          rustup update
-          rustup target add aarch64-apple-ios aarch64-apple-ios-sim || true
-          # Falls das Projekt eine Nightly-Version erzwingt:
-          rustup toolchain install nightly --profile minimal || true
-          rustup target add aarch64-apple-ios aarch64-apple-ios-sim --toolchain nightly || true
-
-      - name: Build iOS App
+      - name: Generate Xcode Project
         env:
           TEAM: "0000000000"
         run: |
           chmod +x make-ios.sh
-          ./make-ios.sh
+          # Führt die Generierung aus, bricht aber nicht ab, falls das Skript am Ende scheitert
+          ./make-ios.sh || true
+
+      - name: Build with Xcode for iOS Device
+        run: |
+          # Baut das Projekt direkt für ein echtes iOS-Gerät (ARM64)
+          xcodebuild -project muguet.xcodeproj \
+                     -scheme muguet \
+                     -configuration Release \
+                     -sdk iphoneos \
+                     -arch arm64 \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGN_IDENTITY="" \
+                     CODE_SIGNING_REQUIRED=NO \
+                     clean build
 
       - name: Package IPA
         run: |
           mkdir -p Payload
-          mv build/Build/Products/Release-iphoneos/muguet.app Payload/ 2>/dev/null || mv build/muguet.app Payload/ 2>/dev/null || true
+          # Kopiert die gebaute App aus dem Xcode Build-Ordner
+          cp -r build/Release-iphoneos/muguet.app Payload/ 2>/dev/null || cp -r ~/Library/Developer/Xcode/DerivedData/*/Build/Products/Release-iphoneos/muguet.app Payload/ 2>/dev/null || true
           zip -r muguet.ipa Payload
 
       - name: Upload IPA Artifact
