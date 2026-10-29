@@ -21,6 +21,8 @@ jobs:
           brew install xcodegen
 
       - name: Build iOS App
+        env:
+          TEAM: "0000000000"
         run: |
           chmod +x make-ios.sh
           ./make-ios.sh
