@@ -11,45 +11,32 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Rust Toolchain & Targets
-        run: |
-          rustup default stable
-          rustup target add aarch64-apple-ios
-
-      - name: Install xcodegen
+      - name: Install Dependencies
         run: |
           brew install xcodegen
 
-      - name: Generate Xcode Project
+      - name: Build IPA via Build Script
         env:
           TEAM: "0000000000"
+          FREE: "1"
         run: |
-          chmod +x make-ios.sh
-          # Führt die Generierung aus, bricht aber nicht ab, falls das Skript am Ende scheitert
-          ./make-ios.sh || true
-
-      - name: Build with Xcode for iOS Device
-        run: |
-          # Baut das Projekt direkt für ein echtes iOS-Gerät (ARM64)
-          xcodebuild -project muguet.xcodeproj \
-                     -scheme muguet \
-                     -configuration Release \
-                     -sdk iphoneos \
-                     -arch arm64 \
-                     CODE_SIGNING_ALLOWED=NO \
-                     CODE_SIGN_IDENTITY="" \
-                     CODE_SIGNING_REQUIRED=NO \
-                     clean build
+          chmod +x build.sh make-ios.sh
+          # Führt den automatischen Build-Prozess für die iOS IPA aus
+          ./make-ios.sh --ipa || bash build.sh
 
       - name: Package IPA
         run: |
           mkdir -p Payload
-          # Kopiert die gebaute App aus dem Xcode Build-Ordner
-          cp -r build/Release-iphoneos/muguet.app Payload/ 2>/dev/null || cp -r ~/Library/Developer/Xcode/DerivedData/*/Build/Products/Release-iphoneos/muguet.app Payload/ 2>/dev/null || true
-          zip -r muguet.ipa Payload
+          cp -r build/Muguet.app Payload/ 2>/dev/null || cp -r build/muguet.app Payload/ 2>/dev/null || true
+          if [ -d "Payload/Muguet.app" ] || [ -d "Payload/muguet.app" ]; then
+            zip -r muguet.ipa Payload
+          fi
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: muguet-ios-ipa
-          path: muguet.ipa
+          path: |
+            muguet.ipa
+            build/Muguet.ipa
+            build/muguet.ipa
