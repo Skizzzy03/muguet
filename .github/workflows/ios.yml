@@ -11,24 +11,24 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Rust Toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-ios, aarch64-apple-ios-sim
-
       - name: Install xcodegen & Dependencies
         run: |
           brew install xcodegen
-          rustup target add aarch64-apple-ios aarch64-apple-ios-sim
+
+      - name: Setup Rust Targets for All Toolchains
+        run: |
+          rustup update
+          rustup target add aarch64-apple-ios aarch64-apple-ios-sim || true
+          # Falls das Projekt eine Nightly-Version erzwingt:
+          rustup toolchain install nightly --profile minimal || true
+          rustup target add aarch64-apple-ios aarch64-apple-ios-sim --toolchain nightly || true
 
       - name: Build iOS App
         env:
           TEAM: "0000000000"
-          ARCHS: "arm64"
-          ONLY_ACTIVE_ARCH: "NO"
         run: |
           chmod +x make-ios.sh
-          ./make-ios.sh --target aarch64-apple-ios || ./make-ios.sh
+          ./make-ios.sh
 
       - name: Package IPA
         run: |
