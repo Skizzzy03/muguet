@@ -14,7 +14,7 @@ jobs:
       - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-ios, aarch64-apple-ios-sim
+          targets: aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios
 
       - name: Install xcodegen & Dependencies
         run: |
@@ -24,6 +24,7 @@ jobs:
         env:
           TEAM: "0000000000"
         run: |
+          rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
           chmod +x make-ios.sh
           ./make-ios.sh
 
